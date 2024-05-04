@@ -77,6 +77,7 @@ private:
 
   int hz_;
   float target_dist_to_goal_;
+  bool use_direction_in_path_;
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;

@@ -22,7 +22,10 @@ LocalGoalCreator::LocalGoalCreator() : private_nh_("~")
   ROS_INFO_STREAM("target_dist_to_goal: " << target_dist_to_goal_);
 }
 
-void LocalGoalCreator::pose_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg){ robot_pose_ = *msg; }
+void LocalGoalCreator::pose_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg)
+{
+  robot_pose_ = *msg;
+}
 
 void LocalGoalCreator::path_callback(const nav_msgs::Path::ConstPtr &msg) { path_ = *msg; }
 
@@ -46,7 +49,8 @@ void LocalGoalCreator::process()
   }
 }
 
-geometry_msgs::PoseStamped LocalGoalCreator::create_goal(const geometry_msgs::PoseWithCovarianceStamped &robot_pose, const nav_msgs::Path &path)
+geometry_msgs::PoseStamped
+LocalGoalCreator::create_goal(const geometry_msgs::PoseWithCovarianceStamped &robot_pose, const nav_msgs::Path &path)
 {
   geometry_msgs::PoseStamped goal_pose;
   for (int i = 1; 0 < i && i < path.poses.size(); i++)
@@ -54,7 +58,7 @@ geometry_msgs::PoseStamped LocalGoalCreator::create_goal(const geometry_msgs::Po
     if (calc_dist_between_points(robot_pose.pose.pose.position, path.poses[i].pose.position) >= target_dist_to_goal_)
     {
       goal_pose.pose.position = path.poses[i].pose.position;
-      goal_pose.pose.orientation = calc_direction(path.poses[i-1].pose.position, path.poses[i].pose.position);
+      goal_pose.pose.orientation = calc_direction(path.poses[i - 1].pose.position, path.poses[i].pose.position);
       return goal_pose;
     }
   }
@@ -68,7 +72,8 @@ float LocalGoalCreator::calc_dist_between_points(const geometry_msgs::Point &poi
   return hypot(dx, dy);
 }
 
-geometry_msgs::Quaternion LocalGoalCreator::calc_direction(const geometry_msgs::Point &point1, const geometry_msgs::Point &point2)
+geometry_msgs::Quaternion
+LocalGoalCreator::calc_direction(const geometry_msgs::Point &point1, const geometry_msgs::Point &point2)
 {
   const float yaw = atan2(point2.y - point1.y, point2.x - point1.x);
   tf2::Quaternion q;

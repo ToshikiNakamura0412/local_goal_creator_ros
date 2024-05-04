@@ -24,7 +24,8 @@ public:
 private:
   void path_callback(const nav_msgs::Path::ConstPtr &msg);
   void pose_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg);
-  geometry_msgs::PoseStamped create_goal(const geometry_msgs::PoseWithCovarianceStamped &robot_pose, const nav_msgs::Path &path);
+  geometry_msgs::PoseStamped
+  create_goal(const geometry_msgs::PoseWithCovarianceStamped &robot_pose, const nav_msgs::Path &path);
   float calc_dist_between_points(const geometry_msgs::Point &point1, const geometry_msgs::Point &point2);
   geometry_msgs::Quaternion calc_direction(const geometry_msgs::Point &point1, const geometry_msgs::Point &point2);
 
@@ -41,4 +42,4 @@ private:
   std::optional<nav_msgs::Path> path_;
 };
 
-#endif // LOCAL_GOAL_CREATOR_LOCAL_GOAL_CREATOR_H
+#endif  // LOCAL_GOAL_CREATOR_LOCAL_GOAL_CREATOR_H

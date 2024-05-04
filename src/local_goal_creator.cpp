@@ -12,6 +12,7 @@ LocalGoalCreator::LocalGoalCreator() : private_nh_("~")
 {
   private_nh_.param<int>("hz", hz_, 10);
   private_nh_.param<float>("target_dist_to_goal", target_dist_to_goal_, 0.5);
+  private_nh_.param<bool>("use_direction_in_path", use_direction_in_path_, false);
 
   goal_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("local_goal", 1);
   path_sub_ = nh_.subscribe("/path", 1, &LocalGoalCreator::path_callback, this);
@@ -20,6 +21,7 @@ LocalGoalCreator::LocalGoalCreator() : private_nh_("~")
   ROS_INFO_STREAM(ros::this_node::getName() << "node has started..");
   ROS_INFO_STREAM("hz: " << hz_);
   ROS_INFO_STREAM("target_dist_to_goal: " << target_dist_to_goal_);
+  ROS_INFO_STREAM("use_direction_in_path: " << use_direction_in_path_);
 }
 
 void LocalGoalCreator::pose_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg)
@@ -57,11 +59,25 @@ LocalGoalCreator::create_goal(const geometry_msgs::PoseWithCovarianceStamped &ro
   {
     if (calc_dist_between_points(robot_pose.pose.pose.position, path.poses[i].pose.position) >= target_dist_to_goal_)
     {
-      goal_pose.pose.position = path.poses[i].pose.position;
-      goal_pose.pose.orientation = calc_direction(path.poses[i - 1].pose.position, path.poses[i].pose.position);
+      goal_pose = path.poses[i];
+      if (!use_direction_in_path_)
+        goal_pose.pose.orientation = calc_direction(path.poses[i - 1].pose.position, path.poses[i].pose.position);
+
       return goal_pose;
     }
   }
+
+  goal_pose = path.poses.back();
+  if (!use_direction_in_path_ && path.poses.size() >= 2)
+  {
+    goal_pose.pose.orientation =
+        calc_direction(path.poses[path.poses.size() - 2].pose.position, path.poses.back().pose.position);
+  }
+  else if (!use_direction_in_path_ && path.poses.size() == 1)
+  {
+    goal_pose.pose.orientation = calc_direction(robot_pose.pose.pose.position, path.poses.back().pose.position);
+  }
+
   return path.poses.back();
 }
 

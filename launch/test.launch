@@ -4,6 +4,7 @@
     <arg name="map_path" default="$(find a_star_ros)/maps/map.yaml"/>
 
     <include file="$(find local_goal_creator_ros)/launch/local_goal_creator.launch">
+        <arg name="use_direction_in_path" value="true"/>
         <arg name="robot_pose_topic" value="/initialpose"/>
     </include>
 

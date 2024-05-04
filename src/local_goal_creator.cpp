@@ -69,9 +69,14 @@ LocalGoalCreator::create_goal(const geometry_msgs::PoseWithCovarianceStamped &ro
 
   goal_pose = path.poses.back();
   if (!use_direction_in_path_ && path.poses.size() >= 2)
-    goal_pose.pose.orientation = calc_direction(path.poses[path.poses.size() - 2].pose.position, path.poses.back().pose.position);
+  {
+    goal_pose.pose.orientation =
+        calc_direction(path.poses[path.poses.size() - 2].pose.position, path.poses.back().pose.position);
+  }
   else if (!use_direction_in_path_ && path.poses.size() == 1)
+  {
     goal_pose.pose.orientation = calc_direction(robot_pose.pose.pose.position, path.poses.back().pose.position);
+  }
 
   return path.poses.back();
 }

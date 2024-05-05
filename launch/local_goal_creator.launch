@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="target_dist_to_goal" default="0.5"/>
-    <arg name="path_topic" default="/path"/>
     <arg name="use_direction_in_path" default="false"/>
+    <arg name="path_topic" default="/path"/>
     <arg name="robot_pose_topic" default="/robot_pose"/>
     <node pkg="local_goal_creator_ros" type="local_goal_creator_node" name="local_goal_creator" output="screen">
         <param name="target_dist_to_goal" value="$(arg target_dist_to_goal)"/>

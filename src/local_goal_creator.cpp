@@ -6,6 +6,8 @@
  * @copyright Copyright (c) 2024
  */
 
+#include <algorithm>
+
 #include "local_goal_creator/local_goal_creator.h"
 
 LocalGoalCreator::LocalGoalCreator() : private_nh_("~")
@@ -24,68 +26,134 @@ LocalGoalCreator::LocalGoalCreator() : private_nh_("~")
   ROS_INFO_STREAM("use_direction_in_path: " << use_direction_in_path_);
 }
 
+void LocalGoalCreator::path_callback(const nav_msgs::Path::ConstPtr &msg) { path_ = *msg; }
+
 void LocalGoalCreator::pose_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg)
 {
   robot_pose_ = *msg;
 }
 
-void LocalGoalCreator::path_callback(const nav_msgs::Path::ConstPtr &msg) { path_ = *msg; }
-
 void LocalGoalCreator::process()
 {
   ros::Rate loop_rate(hz_);
+
+  std::optional<nav_msgs::Path> prev_path;
+  geometry_msgs::PoseStamped goal_pose;
+
   while (ros::ok())
   {
     ros::spinOnce();
 
     if (robot_pose_.has_value() && path_.has_value())
     {
-      geometry_msgs::PoseStamped goal_pose;
-      goal_pose = create_goal(robot_pose_.value(), path_.value());
+      if (prev_path.has_value())
+      {
+        goal_pose = update_goal(
+            robot_pose_.value(), path_.value(), target_dist_to_goal_, use_direction_in_path_, prev_path.value(),
+            goal_pose);
+      }
+      else
+      {
+        goal_pose = create_goal(robot_pose_.value(), path_.value(), target_dist_to_goal_, use_direction_in_path_, 0);
+      }
       goal_pose.header.stamp = ros::Time::now();
-      goal_pose.header.frame_id = robot_pose_.value().header.frame_id;
+      goal_pose.header.frame_id = path_.value().header.frame_id;
       goal_pub_.publish(goal_pose);
+      prev_path = path_.value();
     }
 
     loop_rate.sleep();
   }
 }
 
-geometry_msgs::PoseStamped
-LocalGoalCreator::create_goal(const geometry_msgs::PoseWithCovarianceStamped &robot_pose, const nav_msgs::Path &path)
+geometry_msgs::PoseStamped LocalGoalCreator::update_goal(
+    const geometry_msgs::PoseWithCovarianceStamped &robot_pose, const nav_msgs::Path &path,
+    const float target_dist_to_goal, const bool use_direction_in_path, const nav_msgs::Path prev_path,
+    const geometry_msgs::PoseStamped &prev_goal_pose)
 {
-  geometry_msgs::PoseStamped goal_pose;
-  for (int i = 1; 0 < i && i < path.poses.size(); i++)
+  int start_index = 0;
+  if (!is_changed_path(path, prev_path))
   {
-    if (calc_dist_between_points(robot_pose.pose.pose.position, path.poses[i].pose.position) >= target_dist_to_goal_)
+    float min_dist = FLT_MAX;
+    for (int i = 0; i < path.poses.size(); i++)
     {
-      goal_pose = path.poses[i];
-      if (!use_direction_in_path_)
-        goal_pose.pose.orientation = calc_direction(path.poses[i - 1].pose.position, path.poses[i].pose.position);
-
-      return goal_pose;
+      const float dist = calc_dist_between_points(prev_goal_pose.pose.position, path.poses[i].pose.position);
+      if (dist < min_dist)
+      {
+        min_dist = dist;
+        start_index = i;
+      }
     }
   }
 
-  goal_pose = path.poses.back();
-  if (!use_direction_in_path_ && path.poses.size() >= 2)
+  return create_goal(robot_pose, path, target_dist_to_goal, use_direction_in_path, start_index);
+}
+
+bool LocalGoalCreator::is_changed_path(const nav_msgs::Path &path, const nav_msgs::Path &prev_path)
+{
+  if (path.poses.size() == 0)
   {
-    goal_pose.pose.orientation =
-        calc_direction(path.poses[path.poses.size() - 2].pose.position, path.poses.back().pose.position);
+    ROS_WARN("Path is empty");
+    return false;
   }
-  else if (!use_direction_in_path_ && path.poses.size() == 1)
+  else if (prev_path.poses.size() == 0)
   {
-    goal_pose.pose.orientation = calc_direction(robot_pose.pose.pose.position, path.poses.back().pose.position);
+    ROS_WARN("Previous path is empty");
+    return true;
+  }
+  const bool is_changed_start = path.poses.front().pose.position.x != prev_path.poses.front().pose.position.x ||
+                                path.poses.front().pose.position.y != prev_path.poses.front().pose.position.y;
+  const bool is_changed_goal = path.poses.back().pose.position.x != prev_path.poses.back().pose.position.x ||
+                               path.poses.back().pose.position.y != prev_path.poses.back().pose.position.y;
+
+  return is_changed_start || is_changed_goal;
+}
+
+geometry_msgs::PoseStamped LocalGoalCreator::create_goal(
+    const geometry_msgs::PoseWithCovarianceStamped &robot_pose, const nav_msgs::Path &path,
+    const float target_dist_to_goal, const bool use_direction_in_path, int start_index)
+{
+  if (path.poses.size() == 0)
+  {
+    ROS_WARN("Path is empty");
+    return geometry_msgs::PoseStamped();
+  }
+  else if (path.poses.size() <= start_index)
+  {
+    ROS_WARN("Start index is out of range");
+    return geometry_msgs::PoseStamped();
   }
 
-  return path.poses.back();
+  std::optional<geometry_msgs::PoseStamped> goal_pose;
+  int i = std::max(start_index, 0);
+  while (i < path.poses.size())
+  {
+    if (calc_dist_between_points(robot_pose.pose.pose.position, path.poses[i].pose.position) >= target_dist_to_goal)
+    {
+      goal_pose = path.poses[i];
+      break;
+    }
+    i++;
+  }
+
+  if (!goal_pose.has_value())
+    goal_pose = path.poses.back();
+  if (!use_direction_in_path)
+  {
+    if (path.poses.size() == 1)
+      goal_pose.value().pose.orientation = robot_pose.pose.pose.orientation;
+    else if (i != path.poses.size() - 1)
+      goal_pose.value().pose.orientation = calc_direction(path.poses[i].pose.position, path.poses[i + 1].pose.position);
+    else
+      goal_pose.value().pose.orientation = calc_direction(path.poses[i - 1].pose.position, path.poses[i].pose.position);
+  }
+
+  return goal_pose.value();
 }
 
 float LocalGoalCreator::calc_dist_between_points(const geometry_msgs::Point &point1, const geometry_msgs::Point &point2)
 {
-  const float dx = point1.x - point2.x;
-  const float dy = point1.y - point2.y;
-  return hypot(dx, dy);
+  return hypot(point2.x - point1.x, point2.y - point1.y);
 }
 
 geometry_msgs::Quaternion

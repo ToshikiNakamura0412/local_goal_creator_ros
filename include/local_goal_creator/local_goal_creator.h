@@ -52,10 +52,40 @@ private:
    *
    * @param robot_pose Robot pose
    * @param path Path
+   * @param target_dist_to_goal Target distance to goal
+   * @param use_direction_in_path Use direction in path
+   * @param prev_path Previous path
+   * @param prev_goal_pose Previous goal pose
    * @return geometry_msgs::PoseStamped Goal
    */
-  geometry_msgs::PoseStamped
-  create_goal(const geometry_msgs::PoseWithCovarianceStamped &robot_pose, const nav_msgs::Path &path);
+  geometry_msgs::PoseStamped update_goal(
+      const geometry_msgs::PoseWithCovarianceStamped &robot_pose, const nav_msgs::Path &path,
+      const float target_dist_to_goal, const bool use_direction_in_path, const nav_msgs::Path prev_path,
+      const geometry_msgs::PoseStamped &prev_goal_pose);
+
+  /**
+   * @brief Check if path is changed
+   *
+   * @param path Path
+   * @param prev_path Previous path
+   * @return true Path is changed
+   * @return false Path is not changed
+   */
+  bool is_changed_path(const nav_msgs::Path &path, const nav_msgs::Path &prev_path);
+
+  /**
+   * @brief Create goal
+   *
+   * @param robot_pose Robot pose
+   * @param path Path
+   * @param target_dist_to_goal Target distance to goal
+   * @param use_direction_in_path Use direction in path
+   * @param start_index Start index
+   * @return geometry_msgs::PoseStamped Goal
+   */
+  geometry_msgs::PoseStamped create_goal(
+      const geometry_msgs::PoseWithCovarianceStamped &robot_pose, const nav_msgs::Path &path,
+      const float target_dist_to_goal, const bool use_direction_in_path, int start_index);
 
   /**
    * @brief Calculate distance between two points

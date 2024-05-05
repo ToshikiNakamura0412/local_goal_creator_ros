@@ -20,7 +20,7 @@ LocalGoalCreator::LocalGoalCreator() : private_nh_("~")
   path_sub_ = nh_.subscribe("/path", 1, &LocalGoalCreator::path_callback, this);
   pose_sub_ = nh_.subscribe("/robot_pose", 1, &LocalGoalCreator::pose_callback, this);
 
-  ROS_INFO_STREAM(ros::this_node::getName() << "node has started..");
+  ROS_INFO_STREAM(ros::this_node::getName() << " node has started..");
   ROS_INFO_STREAM("hz: " << hz_);
   ROS_INFO_STREAM("target_dist_to_goal: " << target_dist_to_goal_);
   ROS_INFO_STREAM("use_direction_in_path: " << use_direction_in_path_);
@@ -174,7 +174,7 @@ LocalGoalCreator::calc_direction(const geometry_msgs::Point &point1, const geome
 
 int main(int argc, char *argv[])
 {
-  ros::init(argc, argv, "obstacle_inflater");
+  ros::init(argc, argv, "local_goal_creator");
   LocalGoalCreator local_goal_creator;
   local_goal_creator.process();
 

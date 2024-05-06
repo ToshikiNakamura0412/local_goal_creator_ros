@@ -158,16 +158,10 @@ float LocalGoalCreator::calc_dist_between_points(const geometry_msgs::Point &poi
 geometry_msgs::Quaternion
 LocalGoalCreator::calc_direction(const geometry_msgs::Point &point1, const geometry_msgs::Point &point2)
 {
-  const float yaw = atan2(point2.y - point1.y, point2.x - point1.x);
   tf2::Quaternion q;
-  q.setRPY(0, 0, yaw);
-
+  q.setRPY(0, 0, atan2(point2.y - point1.y, point2.x - point1.x));
   geometry_msgs::Quaternion q_msg;
-  q_msg.x = q.x();
-  q_msg.y = q.y();
-  q_msg.z = q.z();
-  q_msg.w = q.w();
-
+  tf2::convert(q, q_msg);
   return q_msg;
 }
 

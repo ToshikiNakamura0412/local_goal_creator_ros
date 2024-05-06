@@ -9,7 +9,7 @@
 
 #include "local_goal_creator/local_goal_creator.h"
 
-LocalGoalCreator::LocalGoalCreator() : private_nh_("~")
+LocalGoalCreator::LocalGoalCreator(void) : private_nh_("~")
 {
   private_nh_.param<int>("hz", hz_, 10);
   private_nh_.param<float>("target_dist_to_goal", target_dist_to_goal_, 0.5);
@@ -32,7 +32,7 @@ void LocalGoalCreator::pose_callback(const geometry_msgs::PoseWithCovarianceStam
   robot_pose_ = *msg;
 }
 
-void LocalGoalCreator::process()
+void LocalGoalCreator::process(void)
 {
   ros::Rate loop_rate(hz_);
 

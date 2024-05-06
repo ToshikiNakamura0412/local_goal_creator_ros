@@ -25,12 +25,12 @@ public:
   /**
    * @brief Construct a new Local Goal Creator object
    */
-  LocalGoalCreator();
+  LocalGoalCreator(void);
 
   /**
    * @brief Process local goal creation
    */
-  void process();
+  void process(void);
 
 private:
   /**

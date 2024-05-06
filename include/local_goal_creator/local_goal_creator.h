@@ -2,7 +2,6 @@
  * @file local_goal_creator.h
  * @author Toshiki Nakamura
  * @brief C++ implementation of local goal creator
- * @date 2024-05-04
  * @copyright Copyright (c) 2024
  */
 

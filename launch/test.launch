@@ -5,6 +5,7 @@
     <arg name="use_direction_in_path" default="true"/>
 
     <include file="$(find local_goal_creator_ros)/launch/local_goal_creator.launch">
+        <arg name="output" value="screen"/>
         <arg name="use_direction_in_path" value="$(arg use_direction_in_path)"/>
         <arg name="robot_pose_topic" value="/initialpose"/>
     </include>
